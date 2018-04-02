@@ -70,7 +70,8 @@ void setup()
     pinMode(LED_RIGHT_GRN, OUTPUT); //RIGHT GREEN PIN OUT
 
     //Set warmup color for LEDS
-    Serial.println("LEDs ARE NOW YELLOW AND WILL REMAIN TILL SETUP IS DONE");
+    Serial.println("GYROCUBE V1.0 SETUP");
+    Serial.println("LEDs ARE NOW YELLOW AND WILL REMAIN TILL SETUP IS DONE\n\n");
     LEDS_YELLOW();
 
     //Ensure I2C is properly included
@@ -132,7 +133,7 @@ void setup()
     }
 
     Serial.println("MPU6050 CONNECTED!! LEDS SHOULD BLINK GREEN THEN SOLID YELLOW");
-    Serial.println("IF THEY ARE NOT YELLOW, REBOOT AND CHECK CONNECTIONS");
+    Serial.println("IF THEY ARE NOT YELLOW, REBOOT AND CHECK CONNECTIONS\n\n");
     Serial.println("ARMING THE ESCs AND SPEEDING UP TO IDLE FOR 3 SECONDS");
 
     //Connect the ESC Pins to the Servos:
@@ -158,7 +159,7 @@ void setup()
     Serial.println("MOTORS SHOULD BE IDLED NOW. WAITING 5 SECONDS THEN STOPPING");
     IDLE_MOTORS(35,50,1);
     delay(5000);
-    Serial.println("SPINNING DOWN NOW....");
+    Serial.println("SPINNING DOWN NOW....\n\n");
     IDLE_MOTORS(0,50,1);
 
     Serial.println("AT THIS POINT ALL COMPONENTS ARE WORKING");
