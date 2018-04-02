@@ -272,7 +272,7 @@ void loop()
 
             if ((ROLL_ANGLE < 50) || (ROLL_ANGLE > 55)) 
             {   //Away from MPU wiring
-                Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
+                //Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
                 analogWrite(LED_LEFT_RED, 0);
                 analogWrite(LED_LEFT_GRN, 255);
                 analogWrite(LED_RIGHT_RED, 0);
@@ -291,7 +291,7 @@ void loop()
             }
             if((ROLL_ANGLE > -40) || (ROLL_ANGLE < -45)) 
             {   //Towards MPU Wiring       
-                Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
+                //Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
                 analogWrite(LED_LEFT_RED, 0);
                 analogWrite(LED_LEFT_GRN, 255);
                 analogWrite(LED_RIGHT_RED, 0);
