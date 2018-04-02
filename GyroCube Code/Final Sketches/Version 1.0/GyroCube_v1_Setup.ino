@@ -82,12 +82,12 @@ void setup()
     #endif
 
     //Serial Line time:
-    Serial.setup(115200);
+    Serial.begin(115200);
     while(!Serial);
 
     //Make our Gyro connections and boot it up
     Serial.println("CONNECTING TO MPU6050:");
-    MPU6050_CHIP.initalize();
+    MPU6050_CHIP.initialize();
     Serial.println(F("Testing device connections..."));
     Serial.println(MPU6050_CHIP.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed")); 
     Serial.println("ATTEMPTING INIT OF DMP NOW....");
@@ -117,7 +117,7 @@ void setup()
         //Set the LEDS green once and then back to yellow
         LEDS_GREEN();
         //Delay so it looks like there's a blink
-        delay(500);
+        delay(1500);
         //Back to yellow:
         LEDS_YELLOW();
     }
@@ -152,16 +152,17 @@ void setup()
     delay(1000);
     Serial.print("1.....");
     delay(1000);
-    Serial.println("ESC IDLE STARTING NOW");
+    Serial.println("\nESC IDLE STARTING NOW");
 
     //Idle motor functions
-    Serial.println("MOTORS SHOULD BE IDLED NOW. WAITING 3 SECONDS THEN STOPPING");
-    IDLE_MOTORS(35, 50);
-    delay(3000);
+    Serial.println("MOTORS SHOULD BE IDLED NOW. WAITING 5 SECONDS THEN STOPPING");
+    IDLE_MOTORS(35,50,1);
+    delay(5000);
     Serial.println("SPINNING DOWN NOW....");
-    IDLE_MOTORS(0,50);
+    IDLE_MOTORS(0,50,1);
 
     Serial.println("AT THIS POINT ALL COMPONENTS ARE WORKING");
+    LEDS_GREEN();
     Serial.println("WAITING 15 SECONDS THEN MOVING TO VOID LOOP");
 
     delay(15000);
@@ -169,8 +170,6 @@ void setup()
 //-----------------------------------------------------------------------------------
 //Extra functions defined here for use in the setup script ONLY!!!
 //Trying to call these in loop will not work!
-
-//DONE - LEDS ARE NOW FUNCTIONS!
 
 void LEDS_YELLOW() 
 {   //Set LEDS YELLOW
@@ -196,20 +195,29 @@ void LEDS_RED()
     analogWrite(LED_RIGHT_GRN, 255);
 }
 
-void IDLE_MOTORS(int IDLE_SPEED, int STEP_DELAY) 
+void IDLE_MOTORS(int IDLE_SPEED, int STEP_DELAY, int THROTTLE_STEP) 
 {   //Set the motors to an idle speed.
     int CURRENT_THROTTLE = CHECK_THROTTLE();
-    int STEP = 1;
     while (CURRENT_THROTTLE != IDLE_SPEED) 
     {
-        LEFT_MOTOR.write(CURRENT_THROTTLE + STEP);
-        RIGHT_MOTOR.write(CURRENT_THROTTLE + STEP);
-        CURRENT_THROTTLE = CHECK_THROTTLE();
-        delay(STEP_DELAY);
+        if (CURRENT_THROTTLE < IDLE_SPEED)
+        {
+            LEFT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
+            RIGHT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
+            CURRENT_THROTTLE = CHECK_THROTTLE();
+            delay(STEP_DELAY);
+        }
+        if (CURRENT_THROTTLE > IDLE_SPEED) 
+        {
+            LEFT_MOTOR.write(CURRENT_THROTTLE - THROTTLE_STEP);
+            RIGHT_MOTOR.write(CURRENT_THROTTLE - THROTTLE_STEP);
+            CURRENT_THROTTLE = CHECK_THROTTLE();
+            delay(STEP_DELAY);
+        }
     }
 }
 
-void CHECK_THROTTLE() 
+int CHECK_THROTTLE() 
 {   //Read current throttle:
     int CURRENT_THROTTLE = LEFT_MOTOR.read();
     return CURRENT_THROTTLE;
@@ -219,3 +227,6 @@ void CHECK_THROTTLE()
 //------------------------------------------------------------------------------------
 
 //Void Loop goes here where the PID control is added in.
+void loop() {
+    Serial.println("SETUP DONE");
+}
