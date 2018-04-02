@@ -134,7 +134,7 @@ void setup()
 
     Serial.println("MPU6050 CONNECTED!! LEDS SHOULD BLINK GREEN THEN SOLID YELLOW");
     Serial.println("IF THEY ARE NOT YELLOW, REBOOT AND CHECK CONNECTIONS\n\n");
-    Serial.println("ARMING THE ESCs AND SPEEDING UP TO IDLE FOR 3 SECONDS");
+    Serial.println("ARMING THE ESCs AND SPEEDING UP TO IDLE FOR 5 SECONDS");
 
     //Connect the ESC Pins to the Servos:
     LEFT_MOTOR.attach(LEFT_ESC, MIN_PULSE, MAX_PULSE);
@@ -146,7 +146,7 @@ void setup()
 
     Serial.println("IF THE ESCs DID NOT MAKE THE 1356 NOISE, REBOOT!!!!");
     Serial.println("THE ESCs ARE NOW ARMED.  DO NOT DISCONNECT POWER");
-    Serial.println("WAITING 3 SECONDS THEN REVVING TO IDLE FOR 3 SECONDS.");
+    Serial.println("WAITING 3 SECONDS THEN REVVING TO IDLE FOR 5 SECONDS.");
     Serial.print("3.....");
     delay(1000);
     Serial.print("2.....");
