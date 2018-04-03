@@ -140,9 +140,14 @@ void setup()
     LEFT_MOTOR.attach(LEFT_ESC, MIN_PULSE, MAX_PULSE);
     RIGHT_MOTOR.attach(RIGHT_ESC, MIN_PULSE, MAX_PULSE);
     
+    delay(1000);
+    
     //ARM THE ESCs
     LEFT_MOTOR.write(0);
     RIGHT_MOTOR.write(0);
+
+    Serial.println("ARM ATTEMPT");
+    delay(1000);
 
     Serial.println("IF THE ESCs DID NOT MAKE THE 1356 NOISE, REBOOT!!!!");
     Serial.println("THE ESCs ARE NOW ARMED.  DO NOT DISCONNECT POWER");
@@ -157,10 +162,10 @@ void setup()
 
     //Idle motor functions
     Serial.println("MOTORS SHOULD BE IDLED NOW. WAITING 5 SECONDS THEN STOPPING");
-    IDLE_MOTORS(35,50,1);
+    IDLE_MOTORS(35,100,1);
     delay(5000);
     Serial.println("SPINNING DOWN NOW....\n\n");
-    IDLE_MOTORS(0,50,1);
+    IDLE_MOTORS(0,100,1);
 
     Serial.println("AT THIS POINT ALL COMPONENTS ARE WORKING");
     LEDS_GREEN();
@@ -199,23 +204,17 @@ void LEDS_RED()
 void IDLE_MOTORS(int IDLE_SPEED, int STEP_DELAY, int THROTTLE_STEP) 
 {   //Set the motors to an idle speed.
     int CURRENT_THROTTLE = CHECK_THROTTLE();
+    if(IDLE_SPEED < CURRENT_THROTTLE)
+    {
+        THROTTLE_STEP = THROTTLE_STEP*-1;
+    }
     while (CURRENT_THROTTLE != IDLE_SPEED) 
     {
-        if (CURRENT_THROTTLE < IDLE_SPEED)
-        {
-            LEFT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
-            RIGHT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
-            CURRENT_THROTTLE = CHECK_THROTTLE();
-            delay(STEP_DELAY);
-        }
-        if (CURRENT_THROTTLE > IDLE_SPEED) 
-        {
-            LEFT_MOTOR.write(CURRENT_THROTTLE - THROTTLE_STEP);
-            RIGHT_MOTOR.write(CURRENT_THROTTLE - THROTTLE_STEP);
-            CURRENT_THROTTLE = CHECK_THROTTLE();
-            delay(STEP_DELAY);
-        }
-    }
+        RIGHT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
+        LEFT_MOTOR.write(CURRENT_THROTTLE + THROTTLE_STEP);
+        CURRENT_THROTTLE = CHECK_THROTTLE();
+        delay(STEP_DELAY);
+    } 
 }
 
 int CHECK_THROTTLE() 

@@ -1,5 +1,5 @@
 {
     "port": "COM4",
     "board": "arduino:avr:uno",
-    "sketch": "GyroCube Code\\Component Example Sketches\\Battery Level Indicator\\BATTERY_LEVEL.ino"
+    "sketch": "GyroCube Code\\Final Sketches\\Version 1.0\\GyroCube_v1_Setup.ino"
 }
