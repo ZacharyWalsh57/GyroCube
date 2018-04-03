@@ -146,9 +146,6 @@ void setup()
     LEFT_MOTOR.write(0);
     RIGHT_MOTOR.write(0);
 
-    Serial.println("ARM ATTEMPT");
-    delay(1000);
-
     Serial.println("IF THE ESCs DID NOT MAKE THE 1356 NOISE, REBOOT!!!!");
     Serial.println("THE ESCs ARE NOW ARMED.  DO NOT DISCONNECT POWER");
     Serial.println("WAITING 3 SECONDS THEN REVVING TO IDLE FOR 5 SECONDS.");
