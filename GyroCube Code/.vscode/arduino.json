@@ -1,4 +1,5 @@
 {
     "port": "COM4",
-    "board": "arduino:avr:uno"
+    "board": "arduino:avr:uno",
+    "sketch": "Component Example Sketches\\MPU6050\\MPU6050 - Setting Zero Point\\ZERO_ROLL_ANGLE.ino"
 }

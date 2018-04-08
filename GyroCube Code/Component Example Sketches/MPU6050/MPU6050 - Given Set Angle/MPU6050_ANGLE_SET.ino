@@ -256,13 +256,14 @@ void loop()
         MPU6050_CHIP.dmpGetGravity(&GRAVITY, &QUAT);
         MPU6050_CHIP.dmpGetYawPitchRoll(YAW_PITCH_ROLL, &QUAT, &GRAVITY);
 
-        float ROLL_ANGLE = ((YAW_PITCH_ROLL[2] * 180/M_PI));
+        float ROLL_ANGLE = ((YAW_PITCH_ROLL[2] * 180 / M_PI));
         Serial.print("ROLL ANGLE IS:\t");
         Serial.print(ROLL_ANGLE);
 
-        if(ROLL_ANGLE > 0) {
-            if ((ROLL_ANGLE > 50) && (ROLL_ANGLE < 55)) 
-            {   //Away from MPU wiring
+        if (ROLL_ANGLE > 0)
+        {
+            if ((ROLL_ANGLE > 50) && (ROLL_ANGLE < 55))
+            { //Away from MPU wiring
                 Serial.println("\t\tWITHIN THE RANGE: SETTING GREEN");
                 analogWrite(LED_LEFT_RED, 255);
                 analogWrite(LED_LEFT_GRN, 0);
@@ -270,8 +271,8 @@ void loop()
                 analogWrite(LED_RIGHT_GRN, 0);
             }
 
-            if ((ROLL_ANGLE < 50) || (ROLL_ANGLE > 55)) 
-            {   //Away from MPU wiring
+            if ((ROLL_ANGLE < 50) || (ROLL_ANGLE > 55))
+            { //Away from MPU wiring
                 //Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
                 analogWrite(LED_LEFT_RED, 0);
                 analogWrite(LED_LEFT_GRN, 255);
@@ -280,17 +281,18 @@ void loop()
             }
         }
 
-        if(ROLL_ANGLE < 0) {
-            if((ROLL_ANGLE < -40) && (ROLL_ANGLE > -45)) 
-            {   //Towards MPU Wiring
+        if (ROLL_ANGLE < 0)
+        {
+            if ((ROLL_ANGLE < -40) && (ROLL_ANGLE > -45))
+            { //Towards MPU Wiring
                 Serial.println("\t\tWITHIN THE RANGE: SETTING GREEN");
                 analogWrite(LED_LEFT_RED, 255);
                 analogWrite(LED_LEFT_GRN, 0);
                 analogWrite(LED_RIGHT_RED, 255);
                 analogWrite(LED_RIGHT_GRN, 0);
             }
-            if((ROLL_ANGLE > -40) || (ROLL_ANGLE < -45)) 
-            {   //Towards MPU Wiring       
+            if ((ROLL_ANGLE > -40) || (ROLL_ANGLE < -45))
+            { //Towards MPU Wiring
                 //Serial.println("\t\tOUTSIDE THE RANGE: SETTING RED");
                 analogWrite(LED_LEFT_RED, 0);
                 analogWrite(LED_LEFT_GRN, 255);
@@ -341,6 +343,5 @@ void loop()
             analogWrite(LED_RIGHT_GRN, 255);
         }
         */
-
     }
 }
