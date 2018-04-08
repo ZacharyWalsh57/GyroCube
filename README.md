@@ -2,6 +2,20 @@
 
 The PID (Or maybe even PD) based, arduino powered, self balancing cube!
 
+
+
+
+4/7/18:
+It somehow didn't take that long to do a full rebuild.  The second version is up and running with stronger parts and better wiring.
+
+Some things added now:
+- PLA Soldered the parts together.  Looks bad but works wonders.
+- Fixed motor vibrations
+- Added in new sketch that lets us find the zero point of the MPU since we cant seem to fix the calibrations any other way.
+- Also threw up diagrams for the control box and the three voltage dividers we will use for battery life monitoring.  
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
 4/6/18:
 - Well unfortunately thing took a turn for the worst.  We're left with no choice but to rebuild the whole cube from the ground up.  The repo will remain the same but will probably branch into version 1.5 leaving the main one behind. Code will be the same for basic component setup, but maybe some pins will change.  
 
