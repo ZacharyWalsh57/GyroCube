@@ -57,7 +57,8 @@
                 "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\Wire\\src\\*",
                 "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\Wire\\src",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\MPU6050",
-                "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev"
+                "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
+                "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire"
             ],
             "defines": [
                 "_DEBUG",
@@ -78,7 +79,8 @@
                     "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\cores\\arduino",
                     "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\Wire\\src",
                     "C:\\Program Files (x86)\\Arduino\\libraries\\MPU6050",
-                    "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev"
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire"
                 ],
                 "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""
