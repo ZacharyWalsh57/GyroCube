@@ -60,7 +60,8 @@
                 "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\LiquidCrystal\\src",
-                "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src"
+                "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src",
+                "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\EEPROM\\src"
             ],
             "defines": [
                 "_DEBUG",
@@ -84,7 +85,8 @@
                     "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
                     "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire",
                     "C:\\Program Files (x86)\\Arduino\\libraries\\LiquidCrystal\\src",
-                    "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src"
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src",
+                    "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\EEPROM\\src"
                 ],
                 "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""
