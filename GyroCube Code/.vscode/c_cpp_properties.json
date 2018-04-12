@@ -58,7 +58,9 @@
                 "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\Wire\\src",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\MPU6050",
                 "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
-                "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire"
+                "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire",
+                "C:\\Program Files (x86)\\Arduino\\libraries\\LiquidCrystal\\src",
+                "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src"
             ],
             "defines": [
                 "_DEBUG",
@@ -80,7 +82,9 @@
                     "C:\\Users\\zwals\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.6.21\\libraries\\Wire\\src",
                     "C:\\Program Files (x86)\\Arduino\\libraries\\MPU6050",
                     "C:\\Program Files (x86)\\Arduino\\libraries\\I2Cdev",
-                    "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire"
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\LCD3Wire",
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\LiquidCrystal\\src",
+                    "C:\\Program Files (x86)\\Arduino\\libraries\\Esplora\\src"
                 ],
                 "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""

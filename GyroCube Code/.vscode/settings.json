@@ -20,6 +20,7 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "xlocnum": "cpp"
+        "xlocnum": "cpp",
+        "chrono": "cpp"
     }
 }

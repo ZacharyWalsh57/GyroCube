@@ -1,5 +1,5 @@
 {
     "port": "COM4",
     "board": "arduino:avr:uno",
-    "sketch": "Component Example Sketches\\LCD I2C\\LCD Test\\LCD_3WIRE_TEST.ino"
+    "sketch": "Component Example Sketches\\LCD Display\\LCD Menu\\LCD_MENU_LAYOUT.ino"
 }
