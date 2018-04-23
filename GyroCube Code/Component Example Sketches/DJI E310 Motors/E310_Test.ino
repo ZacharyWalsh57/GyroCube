@@ -49,9 +49,8 @@ changeThrottle:
 */
 
 #include <Servo.h> 
-
-Servo escLeft;
-Servo escRight;
+  Servo escLeft;
+  Servo escRight;
 
 int escPinLeft = 3;
 int escPinRight = 5;
@@ -60,6 +59,7 @@ int maxPulseRate = 2000;
 int throttleChangeDelay = 100;
 
 void setup() {
+
   Serial.begin(9600);
   Serial.setTimeout(500);
   // Attach the the servos to the correct pin and set the pulse range

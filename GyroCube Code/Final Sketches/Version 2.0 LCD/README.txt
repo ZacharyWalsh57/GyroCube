@@ -25,7 +25,7 @@ MPU Variables
 
 Then use all the menu text and write it in one shot. 
 Might consider moving it into progspace if things get tight.
-Really would rather not. EDIT: I did lol1
+Really would rather not. EDIT: I did lol
 
 Create LCD Screens and menus and the System
 Create the button pins and the button objects
@@ -42,5 +42,8 @@ Open Serial monitor
 -print out raw debug level things
 Setup Telem output (later on)
 Set the LCD focus points for each display.
+------------------------------------------------------------------------
+
+HELPER FUNCTIONS:
 
 

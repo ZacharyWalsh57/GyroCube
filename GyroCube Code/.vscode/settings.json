@@ -21,6 +21,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "xlocnum": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "xlocale": "cpp"
     }
 }

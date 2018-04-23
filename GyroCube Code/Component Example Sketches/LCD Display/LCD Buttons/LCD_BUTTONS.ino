@@ -31,6 +31,7 @@ void loop()
     DOWN.read();
     LEFT.read();
     RIGHT.read();
+    MIDDLE.read();
 
     if (UP.wasReleased())
     {
