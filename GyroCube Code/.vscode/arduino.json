@@ -1,5 +1,5 @@
 {
     "port": "COM4",
     "board": "arduino:avr:uno",
-    "sketch": "Component Example Sketches\\MPU6050\\MPU6050 - Given Set Angle\\MPU6050_ANGLE_SET.ino"
+    "sketch": "Final Sketches\\Version 2.0 LCD\\GyroCubeV2.ino"
 }
