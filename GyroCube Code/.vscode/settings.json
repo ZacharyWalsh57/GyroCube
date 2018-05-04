@@ -23,6 +23,7 @@
         "xlocnum": "cpp",
         "chrono": "cpp",
         "xlocale": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "system_error": "cpp"
     }
 }

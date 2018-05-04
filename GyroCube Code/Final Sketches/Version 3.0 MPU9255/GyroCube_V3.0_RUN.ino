@@ -1,3 +1,4 @@
+#include <Wire.h>
 #include <Servo.h>
 #include <Button.h>
 #include <LiquidCrystal.h>
@@ -12,10 +13,10 @@
 #define LED_RIGHT_GREEN 9
 
 //Motors:
-Servo MOTOR_LEFT;
-Servo MOTOR_RIGHT;
-#define LEFT_MOTOR 3
-#define RIGHT_MOTOR 5
+Servo LEFT_MOTOR;
+Servo RIGHT_MOTOR;
+#define LEFT_MOTOR_PIN 3
+#define RIGHT_MOTOR_PIN 5
 #define MIN_MOTOR_PULSE 1000
 #define MAX_MOTOR_PULSE 2000
 
@@ -45,14 +46,16 @@ LiquidLine BOOT_BRYCE(4,3,BOOT_BRYCE_CHARS);
 LiquidLine MAIN_TITLE(4,0,MAIN_TITLE_CHARS);
 LiquidLine MAIN_RUN_PID(2,2,MAIN_RUN_PID_CHARS);
 LiquidLine MONITOR_TITLE(2,0,MONITOR_TITLE_CHARS);
+/*
 LiquidLine MONITOR_KP(0,1, "Kp: SETP | SpA: XX.X");
 LiquidLine MONITOR_KI(0,2, "Ki: SETI | RtA: XX.X"); //TODO: Change these into chars
-LiquidLine MONITOR_KD(0,3, "Kd: SETD | PID: MOVE");
+LiquidLine MONITOR_KD(0,3, "Kd: SETD | PID: MOVE"); //FIXED: Just remove them overall. Just reprint the LCD every 2/3 seconds
+*/
 
 //LCD - Screens:
 LiquidScreen BOOT_SCREEN(BOOT_WELCOME, BOOT_ZACK, BOOT_BRYCE);
 LiquidScreen MAIN_SCREEN(MAIN_TITLE, MAIN_RUN_PID);
-LiquidScreen MONITOR_SCREEN(MONITOR_TITLE, MONITOR_KP, MONITOR_KI, MONITOR_KD);
+LiquidScreen MONITOR_SCREEN(MONITOR_TITLE);
 
 //LCD - Menus:
 LiquidMenu BOOT_MENU(GYROCUBE_LCD, BOOT_SCREEN);
@@ -79,17 +82,28 @@ Button LEFT(LEFT_PIN,PULLUP,INVERT,DEBOUNCE);
 Button RIGHT(RIGHT_PIN,PULLUP,INVERT,DEBOUNCE);
 Button MIDDLE(MIDDLE_PIN,PULLUP,INVERT,DEBOUNCE);
 
-//PID Constants:
-#define Kp 1.00
-#define Ki 0.12
-#define Kd 2.45
-#define SETPOINT 45
-
 //MPU9255
 #define INT_PIN 2
 MPU9250 MPU_GYRO;
-float ROLL_ANGLE;
+double ROLL_ANGLE;
 
+//PID Constants:
+unsigned long TIME_LAST;
+double INPUT_VALUE, OUTPUT_VALUE, SETPOINT;
+double I_TERM, LAST_INPUT;
+double KP, KI, KD;
+int SAMPLE_TIME = 250; // .25 seconds
+double OUT_MIN, OUT_MAX;
+bool IN_AUTO = false;
+
+#define MANUAL 0
+#define AUTOMATIC 1 
+
+#define DIRECT 0
+#define REVERSE 1
+int CONTROLLER_DIRECTION = DIRECT;
+
+bool RUN_ALGO = true;
 
 //---------------------------------------------------------------------------------------
 //HELPER FUNCTIONS: BUTTONS, LCD, MPU, LEDS, PID, MENU ETC
@@ -107,7 +121,7 @@ void CHECK_BUTTONS() {
         GYROCUBE_LCD.setCursor(5,0);
         GYROCUBE_LCD.print("SETTING UP");
         delay(500);
-        RUN_PID_ALGO();
+        INIT_PARTS();
     }
     if (DOWN.wasReleased())
     {
@@ -115,7 +129,7 @@ void CHECK_BUTTONS() {
         GYROCUBE_LCD.setCursor(5,0);
         GYROCUBE_LCD.print("SETTING UP");
         delay(500);
-        RUN_PID_ALGO();
+        INIT_PARTS();
     }
     if (LEFT.wasReleased())
     {
@@ -123,7 +137,7 @@ void CHECK_BUTTONS() {
         GYROCUBE_LCD.setCursor(5,0);
         GYROCUBE_LCD.print("SETTING UP");
         delay(500);
-        RUN_PID_ALGO();
+        INIT_PARTS();
     }
     if (RIGHT.wasReleased())
     {
@@ -131,7 +145,7 @@ void CHECK_BUTTONS() {
         GYROCUBE_LCD.setCursor(5,0);
         GYROCUBE_LCD.print("SETTING UP");
         delay(500);
-        RUN_PID_ALGO();
+        INIT_PARTS();
     }
     if (MIDDLE.wasReleased())
     {
@@ -139,13 +153,12 @@ void CHECK_BUTTONS() {
         GYROCUBE_LCD.setCursor(5,0);
         GYROCUBE_LCD.print("SETTING UP");
         delay(500);
-        RUN_PID_ALGO();
+        INIT_PARTS();
     }
 }
 
 //LED Functions to reduce code size.  RED, YELLOW, GREEN are defined
 //as LEDS_*color*.  Cycle LEDS is for flashing through RGY
-
 //RED
 void LEDS_RED() {
     analogWrite(LED_LEFT_RED, 0);
@@ -153,7 +166,6 @@ void LEDS_RED() {
     analogWrite(LED_RIGHT_RED, 0);
     analogWrite(LED_RIGHT_GREEN, 255);
 }
-
 //GREEN
 void LEDS_GREEN() {
     analogWrite(LED_LEFT_RED, 255);
@@ -161,7 +173,6 @@ void LEDS_GREEN() {
     analogWrite(LED_RIGHT_RED, 255);
     analogWrite(LED_RIGHT_GREEN, 0);
 }
-
 //YELLOW
 void LEDS_YELLOW() {
     analogWrite(LED_LEFT_RED, 0);
@@ -169,13 +180,8 @@ void LEDS_YELLOW() {
     analogWrite(LED_RIGHT_RED, 0);
     analogWrite(LED_RIGHT_GREEN, 0);
 }
-
 //Flash through the LEDS - RED, GREEN, YELLOW
 void CYCLE_LEDS(int DELAY) {
-    //Small failsafe so it doesnt freak tf out.
-    if (DELAY = 0) {
-        DELAY = 500;
-    }
     LEDS_RED();
     delay(DELAY);
     LEDS_GREEN();
@@ -183,10 +189,50 @@ void CYCLE_LEDS(int DELAY) {
     LEDS_YELLOW();
 }
 
-void ESC_ARMING() {
-    //Arm new version with writeMillis here:
+//Motor throttle changes. THIS IS ONLY FOR SETUP. NOT THE LOOP:
+void SWEEP_THROTTLE(int THROTTLE) {
+    // Read the current throttle value
+    int CURRENT_THROTTLE = READ_THROTTLE();
+    // Are we going up or down?
+    int STEP = 1;
+    if (THROTTLE < CURRENT_THROTTLE)
+        STEP = -1;
+    // Slowly move to the new throttle value
+    while (CURRENT_THROTTLE != THROTTLE)
+    {
+        LEFT_MOTOR.write(CURRENT_THROTTLE + STEP);
+        RIGHT_MOTOR.write(CURRENT_THROTTLE + STEP);
+        CURRENT_THROTTLE = READ_THROTTLE();
+        delay(100);
+    }
+}
+int READ_THROTTLE() {
+    int THROTTLE_LEFT = LEFT_MOTOR.read();
+    int THROTTLE_RIGHT = RIGHT_MOTOR.read();
+    int TOTAL_THROTTLE = THROTTLE_LEFT;
+    return TOTAL_THROTTLE;
 }
 
+//Arming ESC functions
+void ESC_ARMING() {
+    //Arm with old stuff.  PID with the new.
+    LEFT_MOTOR.write(0);
+    RIGHT_MOTOR.write(0);
+    delay(1000);
+    LEDS_GREEN();
+    delay(250);
+    CYCLE_LEDS(375);
+    LEDS_YELLOW();
+    SWEEP_THROTTLE(65);
+    delay(2000);
+    SWEEP_THROTTLE(40);
+    delay(1500);
+    CYCLE_LEDS(275);
+    LEDS_GREEN();
+    
+}
+
+//MPU92655 Init functions and updating RTVs
 void MPU9255_INIT() {
     //Setup code here I guess
     MPU_GYRO.calibrateMPU9250(MPU_GYRO.gyroBias, MPU_GYRO.accelBias);
@@ -208,7 +254,6 @@ void MPU9255_INIT() {
         abort();
     }
 }
-
 void MPU9255_UPDATE() {
     if (MPU_GYRO.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
         
@@ -248,7 +293,8 @@ void MPU9255_UPDATE() {
     }
 }
 
-void RUN_PID_ALGO() {
+//Finally make sure all the parts are working right in one big init function.
+void INIT_PARTS() {
     CYCLE_LEDS(750);
     GYROCUBE_LCD.setCursor(0, 1);
     GYROCUBE_LCD.print("LEDS SETUP");
@@ -262,35 +308,186 @@ void RUN_PID_ALGO() {
     delay(2000);
     GYROCUBE_LCD.clear();
     GYROCUBE_SYSTEM.change_menu(MONITOR_MENU);
+    delay(1500);
+    CYCLE_LEDS(250);
+    PID_ALGO();
     //Then finally, throw this bitch on autopilot lol
+}
 
+//PID FUNCTIONS: These functions are pretty fuckin dope if you ask me.  Took a good amount of time to
+//figure it all out right.
+void INIT_PID_ALGO() {
+    LAST_INPUT = INPUT_VALUE;
+    I_TERM = OUTPUT_VALUE;
+    if(I_TERM > OUT_MAX) 
+        I_TERM = OUT_MAX;
+    else if(I_TERM < OUT_MIN)
+        I_TERM = OUT_MIN;
+}
+void SET_DIRECTION(int DIRECTION) {
+    CONTROLLER_DIRECTION = DIRECTION;
+}
+void FETCH_NEW_DATA() {
+    //Fetch the latest angle values
+    MPU9255_UPDATE();
+    INPUT_VALUE = ROLL_ANGLE;
+}
+void SET_OUTPUT_LIMITS(double MAX, double MIN) {
+    if(MIN > MAX)
+        return;
+    OUT_MAX = MAX;
+    OUT_MIN = MIN;
+
+    if(OUTPUT_VALUE > OUT_MAX)
+        OUTPUT_VALUE = OUT_MAX;
+    else if(OUTPUT_VALUE < OUT_MIN)
+        OUTPUT_VALUE = OUT_MIN;
+
+    if(I_TERM > OUT_MAX) 
+        I_TERM = OUT_MAX;
+    else if(I_TERM < OUT_MIN)
+        I_TERM = OUT_MIN;
+}
+void SET_MODE(int MODE) {
+    bool NEW_AUTO = (MODE == AUTOMATIC);
+    if(NEW_AUTO == !IN_AUTO) {
+        INIT_PID_ALGO();
+    }
+    IN_AUTO = NEW_AUTO;
+}
+void SET_TUNINGS(double SKP, double SKI, double SKD) {
+    if (SKP < 0 || SKI < 0 || SKD < 0)
+        return;
+    
+    double SAMPLE_TIME_SECONDS = ((double)SAMPLE_TIME) / 1000;
+    KP = SKP;
+    KI = SKI * SAMPLE_TIME_SECONDS;
+    KD = SKD / SAMPLE_TIME_SECONDS;
+}
+void SET_SAMPLE_TIME(int NEW_TIME) {
+    if(NEW_TIME > 0) {
+        double RATIO = (double)NEW_TIME / double(SAMPLE_TIME);
+        KI *= RATIO;
+        KD /= RATIO;
+        SAMPLE_TIME = (unsigned long)NEW_TIME;
+    }
+}
+void PID_MOTORS(double VALUE) {
+    //Motor write values. Take care of this later on. 
+    //Double check all the new code/make sure it compiles.
+}
+void PID_COMPUTE() {
+    //PID computation in here:
+    if(!IN_AUTO)
+        return;
+    unsigned long NOW = millis();
+    int ELAPSED = (NOW - TIME_LAST);
+    if(ELAPSED >= SAMPLE_TIME) {
+        //Compute Working Variables now:
+        double ERROR = SETPOINT - INPUT_VALUE;
+        I_TERM += (KI * ERROR);
+        if(I_TERM > OUT_MAX)
+            I_TERM = OUT_MAX;
+        else if(I_TERM < OUT_MIN)
+            I_TERM = OUT_MIN;
+        double D_INPUT = (INPUT_VALUE - LAST_INPUT);
+
+        //Convert this over to PID Components here:
+        OUTPUT_VALUE = KP * ERROR + I_TERM - KD * D_INPUT;
+        if (OUTPUT_VALUE > OUT_MAX)
+            OUTPUT_VALUE = OUT_MAX;
+        else if (OUTPUT_VALUE < OUT_MAX)
+            OUTPUT_VALUE = OUT_MIN;
+
+        //Take note of some important values:
+        LAST_INPUT = INPUT_VALUE;
+        TIME_LAST = NOW;
+
+        //Write the new value to the motors:
+        PID_MOTORS(OUTPUT_VALUE);
+    }
+}
+void PID_HALTED() {
+    RUN_ALGO = false;
+    LEDS_RED();
+    GYROCUBE_LCD.clear();
+    GYROCUBE_LCD.setCursor(0,0);
+    GYROCUBE_LCD.print("PID LOOP HALTED");
+}
+void CHECK_HALT() {
+    UP.read(); 
+    DOWN.read();
+    LEFT.read();
+    RIGHT.read();
+    MIDDLE.read();
+    if (UP.wasReleased())
+    {
+        PID_HALTED();
+    }
+    if (DOWN.wasReleased())
+    {
+        PID_HALTED();
+    }
+    if (LEFT.wasReleased())
+    {
+        PID_HALTED();
+    }
+    if (RIGHT.wasReleased())
+    {
+        PID_HALTED();
+    }
+    if (MIDDLE.wasReleased())
+    {
+        PID_HALTED();
+    }
+
+}
+void PID_ALGO() {
+    CYCLE_LEDS(750);
+    SET_DIRECTION(0);
+    SET_OUTPUT_LIMITS(2000, 1000);
+    SET_MODE(1);
+    SET_TUNINGS(5.026, 0.22, 3.6);
+    LEDS_GREEN();
+    delay(150);
+    while(RUN_ALGO) {
+        CHECK_HALT();
+        FETCH_NEW_DATA();
+        PID_COMPUTE();
+    } 
 }
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
 //RUNTIME CODE:
 
 void setup() {
+    //SERIAL MONITOR AND LCD DONT WORK AT THE SAME TIME.  DAMN IT.
     //Debugging purposes.
     //Serial.begin(38400);
 
-    //Setup the MPU9255:
-    Wire.begin();
-    pinMode(INT_PIN, INPUT);
-    digitalWrite(INT_PIN, LOW);
+    Wire.begin(); //For the MPU9255
 
-    //Link motors:
-    MOTOR_LEFT.attach(LEFT_MOTOR);
-    MOTOR_RIGHT.attach(RIGHT_MOTOR);
-    
     //Fire up LEDs:
     pinMode(LED_LEFT_RED, OUTPUT);  //LEFT RED PIN OUT
     pinMode(LED_LEFT_GREEN, OUTPUT);  //LEFT GREEN PIN OUT
     pinMode(LED_RIGHT_RED, OUTPUT); //RIGHT RED PIN OUT
     pinMode(LED_RIGHT_GREEN, OUTPUT); //RIGHT GREEN PIN OUT
+    delay(350);
+
+    //Motor Connections and arming
+    LEFT_MOTOR.attach(LEFT_MOTOR_PIN);
+    RIGHT_MOTOR.attach(RIGHT_MOTOR_PIN);
+    LEFT_MOTOR.write(0);
+    RIGHT_MOTOR.write(0);
+    delay(250);
+
+    //Setup the MPU9255:
+    pinMode(INT_PIN, INPUT);
+    digitalWrite(INT_PIN, LOW);
+    delay(350);
 
     //LCD Start:
-
-    delay(2000);
+    delay(1500);
     GYROCUBE_LCD.begin(20,4);
 
     //Setup PROGMEM Char sets to Strings:
@@ -308,8 +505,12 @@ void setup() {
 
     //System update:
     GYROCUBE_SYSTEM.update();
+    CYCLE_LEDS(750);
 
 }
+
+
+//Simple ass void loop lol
 
 void loop() {
     //Check ya buttons
