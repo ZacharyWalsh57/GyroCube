@@ -2,6 +2,8 @@
 
 The PID (Or maybe even PD) based, arduino powered, self balancing cube!
 
+
+----------------------------------------------------------------------------------------------------------------------------------------
 5/3/18:
 After finally getting a new IMU and some other parts, development is back on track.  First round of progress updates is on 5/8/18.
 Hopefully by then we'll have:
@@ -14,7 +16,8 @@ Whats new?
 - New IMU: Waveshare 10DOF IMU with an MPU9255 sensor on it (so more new libraries)
 - Fully functional LCD
 - Soon to be rewritten code to store more things in EEPROM and use writeMillis instead of analog write for motor speeds.
-------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------
 
 4/7/18:
 It somehow didn't take that long to do a full rebuild.  The second version is up and running with stronger parts and better wiring.
