@@ -22,6 +22,7 @@
         "utility": "cpp",
         "xlocnum": "cpp",
         "chrono": "cpp",
-        "xlocale": "cpp"
+        "xlocale": "cpp",
+        "cmath": "cpp"
     }
 }

@@ -1,5 +1,5 @@
 {
     "port": "COM4",
     "board": "arduino:avr:uno",
-    "sketch": "Final Sketches\\Version 2.0 LCD\\GyroCubeV2.ino"
+    "sketch": "Final Sketches\\Version 3.0 MPU9255\\GyroCube_V3.0_RUN.ino"
 }
