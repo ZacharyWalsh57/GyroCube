@@ -17,8 +17,6 @@ Servo LEFT_MOTOR;
 Servo RIGHT_MOTOR;
 #define LEFT_MOTOR_PIN 3
 #define RIGHT_MOTOR_PIN 5
-#define MIN_MOTOR_PULSE 1000
-#define MAX_MOTOR_PULSE 2000
 
 //LCD - Screen
 //RED YELLOW GREEN BLK
@@ -46,11 +44,6 @@ LiquidLine BOOT_BRYCE(4,3,BOOT_BRYCE_CHARS);
 LiquidLine MAIN_TITLE(4,0,MAIN_TITLE_CHARS);
 LiquidLine MAIN_RUN_PID(2,2,MAIN_RUN_PID_CHARS);
 LiquidLine MONITOR_TITLE(2,0,MONITOR_TITLE_CHARS);
-/*
-LiquidLine MONITOR_KP(0,1, "Kp: SETP | SpA: XX.X");
-LiquidLine MONITOR_KI(0,2, "Ki: SETI | RtA: XX.X"); //TODO: Change these into chars
-LiquidLine MONITOR_KD(0,3, "Kd: SETD | PID: MOVE"); //FIXED: Just remove them overall. Just reprint the LCD every 2/3 seconds
-*/
 
 //LCD - Screens:
 LiquidScreen BOOT_SCREEN(BOOT_WELCOME, BOOT_ZACK, BOOT_BRYCE);
@@ -89,20 +82,11 @@ double ROLL_ANGLE;
 
 //PID Constants:
 unsigned long TIME_LAST;
-double INPUT_VALUE, OUTPUT_VALUE, SETPOINT;
+double INPUT_VALUE, OUTPUT_VALUE, ERROR;
+double SETPOINT = 45.0;
 double I_TERM, LAST_INPUT;
 double KP, KI, KD;
-int SAMPLE_TIME = 250; // .25 seconds
 double OUT_MIN, OUT_MAX;
-bool IN_AUTO = false;
-
-#define MANUAL 0
-#define AUTOMATIC 1 
-
-#define DIRECT 0
-#define REVERSE 1
-int CONTROLLER_DIRECTION = DIRECT;
-
 bool RUN_ALGO = true;
 
 //---------------------------------------------------------------------------------------
@@ -158,29 +142,26 @@ void CHECK_BUTTONS() {
 }
 
 //LED Functions to reduce code size.  RED, YELLOW, GREEN are defined
-//as LEDS_*color*.  Cycle LEDS is for flashing through RGY
-//RED
+//as LEDS_*color*.  Cycle LEDS is for flashing through RGY. LEDS_OFF 
+//just turns them off.  Used to make a flashing LED.
 void LEDS_RED() {
     analogWrite(LED_LEFT_RED, 0);
     analogWrite(LED_LEFT_GREEN, 255);
     analogWrite(LED_RIGHT_RED, 0);
     analogWrite(LED_RIGHT_GREEN, 255);
 }
-//GREEN
 void LEDS_GREEN() {
     analogWrite(LED_LEFT_RED, 255);
     analogWrite(LED_LEFT_GREEN, 0);
     analogWrite(LED_RIGHT_RED, 255);
     analogWrite(LED_RIGHT_GREEN, 0);
 }
-//YELLOW
 void LEDS_YELLOW() {
     analogWrite(LED_LEFT_RED, 0);
     analogWrite(LED_LEFT_GREEN, 0);
     analogWrite(LED_RIGHT_RED, 0);
     analogWrite(LED_RIGHT_GREEN, 0);
 }
-//Flash through the LEDS - RED, GREEN, YELLOW
 void CYCLE_LEDS(int DELAY) {
     LEDS_RED();
     delay(DELAY);
@@ -188,51 +169,37 @@ void CYCLE_LEDS(int DELAY) {
     delay(DELAY);
     LEDS_YELLOW();
 }
-
-//Motor throttle changes. THIS IS ONLY FOR SETUP. NOT THE LOOP:
-void SWEEP_THROTTLE(int THROTTLE) {
-    // Read the current throttle value
-    int CURRENT_THROTTLE = READ_THROTTLE();
-    // Are we going up or down?
-    int STEP = 1;
-    if (THROTTLE < CURRENT_THROTTLE)
-        STEP = -1;
-    // Slowly move to the new throttle value
-    while (CURRENT_THROTTLE != THROTTLE)
-    {
-        LEFT_MOTOR.write(CURRENT_THROTTLE + STEP);
-        RIGHT_MOTOR.write(CURRENT_THROTTLE + STEP);
-        CURRENT_THROTTLE = READ_THROTTLE();
-        delay(100);
-    }
-}
-int READ_THROTTLE() {
-    int THROTTLE_LEFT = LEFT_MOTOR.read();
-    int THROTTLE_RIGHT = RIGHT_MOTOR.read();
-    int TOTAL_THROTTLE = THROTTLE_LEFT;
-    return TOTAL_THROTTLE;
+void LEDS_OFF() {
+    analogWrite(LED_LEFT_RED, 255);
+    analogWrite(LED_LEFT_GREEN, 255);
+    analogWrite(LED_RIGHT_RED, 255);
+    analogWrite(LED_RIGHT_GREEN, 255);
 }
 
+//Motor throttle changes and ESC Arming. 
+//NOTE: THIS SPEED SET IS ONLY FOR THE SETUP:
 //Arming ESC functions
 void ESC_ARMING() {
     //Arm with old stuff.  PID with the new.
-    LEFT_MOTOR.write(0);
-    RIGHT_MOTOR.write(0);
+    SET_SPEED(1000);
     delay(1000);
     LEDS_GREEN();
     delay(250);
     CYCLE_LEDS(375);
     LEDS_YELLOW();
-    SWEEP_THROTTLE(65);
+    SET_SPEED(1450);
     delay(2000);
-    SWEEP_THROTTLE(40);
+    SET_SPEED(1000);
     delay(1500);
     CYCLE_LEDS(275);
-    LEDS_GREEN();
-    
+    LEDS_GREEN();   
+}
+void SET_SPEED(int MICROS) {
+    LEFT_MOTOR.writeMicroseconds(MICROS);
+    RIGHT_MOTOR.writeMicroseconds(MICROS);
 }
 
-//MPU92655 Init functions and updating RTVs
+//MPU92655 Init functions and updating RTVs when running.
 void MPU9255_INIT() {
     //Setup code here I guess
     MPU_GYRO.calibrateMPU9250(MPU_GYRO.gyroBias, MPU_GYRO.accelBias);
@@ -245,6 +212,7 @@ void MPU9255_INIT() {
 
     if (MPU_GYRO.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01) {
         CYCLE_LEDS(750);
+        digitalWrite(INT_PIN, LOW);
     }
     else {
         GYROCUBE_LCD.clear();
@@ -288,7 +256,7 @@ void MPU9255_UPDATE() {
                     * *(getQ()+1) - *(getQ()+2) * *(getQ()+2) + *(getQ()+3)
                     * *(getQ()+3));
         MPU_GYRO.roll *= RAD_TO_DEG;
-        ROLL_ANGLE = MPU_GYRO.roll;
+        ROLL_ANGLE = abs(MPU_GYRO.roll);
         //Serial.println(ROLL_ANGLE);
     }
 }
@@ -296,37 +264,29 @@ void MPU9255_UPDATE() {
 //Finally make sure all the parts are working right in one big init function.
 void INIT_PARTS() {
     CYCLE_LEDS(750);
-    GYROCUBE_LCD.setCursor(0, 1);
-    GYROCUBE_LCD.print("LEDS SETUP");
+    STRING_ON_LCD(0,1,"LEDS SETUP",false);
+    //GYROCUBE_LCD.setCursor(0, 1);
+    //GYROCUBE_LCD.print("LEDS SETUP");
+    
     MPU9255_INIT();
     MPU9255_UPDATE();
-    GYROCUBE_LCD.setCursor(0, 2);
-    GYROCUBE_LCD.print("MPU9255 DMP OK");
+    //GYROCUBE_LCD.setCursor(0, 2);
+    //GYROCUBE_LCD.print("MPU9255 DMP OK");
+    STRING_ON_LCD(0,2,"MPU9255 DMP OK",false);
+
     ESC_ARMING();
-    GYROCUBE_LCD.setCursor(0, 3);
-    GYROCUBE_LCD.print("ESCs ARMED");
-    delay(2000);
+    //GYROCUBE_LCD.setCursor(0, 3);
+    //GYROCUBE_LCD.print("ESCs ARMED");
+    STRING_ON_LCD(0,3,"ESCs ARMED",false);
+    delay(750);
+    
     GYROCUBE_LCD.clear();
-    GYROCUBE_SYSTEM.change_menu(MONITOR_MENU);
-    delay(1500);
     CYCLE_LEDS(250);
     PID_ALGO();
     //Then finally, throw this bitch on autopilot lol
 }
 
-//PID FUNCTIONS: These functions are pretty fuckin dope if you ask me.  Took a good amount of time to
-//figure it all out right.
-void INIT_PID_ALGO() {
-    LAST_INPUT = INPUT_VALUE;
-    I_TERM = OUTPUT_VALUE;
-    if(I_TERM > OUT_MAX) 
-        I_TERM = OUT_MAX;
-    else if(I_TERM < OUT_MIN)
-        I_TERM = OUT_MIN;
-}
-void SET_DIRECTION(int DIRECTION) {
-    CONTROLLER_DIRECTION = DIRECTION;
-}
+//PID FUNCTIONS: These functions are pretty fuckin dope if you ask me. Credit to Brett Beauregard (Spelling lol)
 void FETCH_NEW_DATA() {
     //Fetch the latest angle values
     MPU9255_UPDATE();
@@ -348,71 +308,79 @@ void SET_OUTPUT_LIMITS(double MAX, double MIN) {
     else if(I_TERM < OUT_MIN)
         I_TERM = OUT_MIN;
 }
-void SET_MODE(int MODE) {
-    bool NEW_AUTO = (MODE == AUTOMATIC);
-    if(NEW_AUTO == !IN_AUTO) {
-        INIT_PID_ALGO();
-    }
-    IN_AUTO = NEW_AUTO;
-}
 void SET_TUNINGS(double SKP, double SKI, double SKD) {
-    if (SKP < 0 || SKI < 0 || SKD < 0)
+    if (SKP < 0 || SKI < 0 || SKD < 0) {
         return;
-    
-    double SAMPLE_TIME_SECONDS = ((double)SAMPLE_TIME) / 1000;
-    KP = SKP;
-    KI = SKI * SAMPLE_TIME_SECONDS;
-    KD = SKD / SAMPLE_TIME_SECONDS;
-}
-void SET_SAMPLE_TIME(int NEW_TIME) {
-    if(NEW_TIME > 0) {
-        double RATIO = (double)NEW_TIME / double(SAMPLE_TIME);
-        KI *= RATIO;
-        KD /= RATIO;
-        SAMPLE_TIME = (unsigned long)NEW_TIME;
     }
+    KP = SKP;
+    KI = SKI;
+    KD = SKD;
 }
-void PID_MOTORS(double VALUE) {
+void PID_MOTORS() {
     //Motor write values. Take care of this later on. 
     //Double check all the new code/make sure it compiles.
-}
-void PID_COMPUTE() {
-    //PID computation in here:
-    if(!IN_AUTO)
-        return;
-    unsigned long NOW = millis();
-    int ELAPSED = (NOW - TIME_LAST);
-    if(ELAPSED >= SAMPLE_TIME) {
-        //Compute Working Variables now:
-        double ERROR = SETPOINT - INPUT_VALUE;
-        I_TERM += (KI * ERROR);
-        if(I_TERM > OUT_MAX)
-            I_TERM = OUT_MAX;
-        else if(I_TERM < OUT_MIN)
-            I_TERM = OUT_MIN;
-        double D_INPUT = (INPUT_VALUE - LAST_INPUT);
-
-        //Convert this over to PID Components here:
-        OUTPUT_VALUE = KP * ERROR + I_TERM - KD * D_INPUT;
-        if (OUTPUT_VALUE > OUT_MAX)
-            OUTPUT_VALUE = OUT_MAX;
-        else if (OUTPUT_VALUE < OUT_MAX)
-            OUTPUT_VALUE = OUT_MIN;
-
-        //Take note of some important values:
-        LAST_INPUT = INPUT_VALUE;
-        TIME_LAST = NOW;
-
-        //Write the new value to the motors:
-        PID_MOTORS(OUTPUT_VALUE);
+    //Code compiles.  This function is gonna be tough since they spin
+    //against each other. So we have to make it so that if we add to one 
+    //and remove from another.  Not hard.  Just annoying.
+    if(ERROR > 0) {
+        LEFT_MOTOR.writeMicroseconds(OUTPUT_VALUE);
+    }
+    if(ERROR < 0) {
+        RIGHT_MOTOR.writeMicroseconds(OUTPUT_VALUE);
     }
 }
+void PID_COMPUTE() {
+    CHECK_HALT();
+    FETCH_NEW_DATA();
+
+    //PID computation in here:
+    unsigned long NOW = millis();
+    int ELAPSED = (NOW - TIME_LAST);
+
+    //Make sure its time for new samples.
+    //Compute Working Variables now:
+    ERROR = SETPOINT - INPUT_VALUE;
+    I_TERM += (KI * ERROR);
+    if(I_TERM > OUT_MAX)
+        I_TERM = OUT_MAX;
+    else if(I_TERM < OUT_MIN)
+        I_TERM = OUT_MIN;
+    double D_INPUT = (INPUT_VALUE - LAST_INPUT);
+
+    //Convert this over to PID Components here:
+    OUTPUT_VALUE = KP * ERROR + I_TERM - KD * D_INPUT;
+    if (OUTPUT_VALUE > OUT_MAX)
+        OUTPUT_VALUE = OUT_MAX;
+    else if (OUTPUT_VALUE < OUT_MIN)
+        OUTPUT_VALUE = OUT_MIN;
+
+    //Take note of some important values:
+    LAST_INPUT = INPUT_VALUE;
+    TIME_LAST = NOW;
+
+    //Write the new value to the motors:
+    PID_MOTORS();
+
+    DOUBLE_ON_LCD(12,1,SETPOINT,false);
+    DOUBLE_ON_LCD(12,2,INPUT_VALUE,false);
+    DOUBLE_ON_LCD(12,3,ERROR,false);
+    DOUBLE_ON_LCD(3,1,KP,false);
+    DOUBLE_ON_LCD(3,2,KI,false);
+    DOUBLE_ON_LCD(3,3,KD,false);
+}
 void PID_HALTED() {
-    RUN_ALGO = false;
-    LEDS_RED();
-    GYROCUBE_LCD.clear();
-    GYROCUBE_LCD.setCursor(0,0);
-    GYROCUBE_LCD.print("PID LOOP HALTED");
+    RUN_ALGO = !RUN_ALGO;
+    LEDS_OFF();
+    SET_SPEED(1300);
+    delay(1000);
+    SET_SPEED(1000);
+    STRING_ON_LCD(0,0, "PID LOOP HALTED", true);
+    while(!RUN_ALGO) {
+        LEDS_RED();
+        delay(750);
+        LEDS_OFF();
+        delay(750);
+    }
 }
 void CHECK_HALT() {
     UP.read(); 
@@ -444,18 +412,45 @@ void CHECK_HALT() {
 }
 void PID_ALGO() {
     CYCLE_LEDS(750);
-    SET_DIRECTION(0);
-    SET_OUTPUT_LIMITS(2000, 1000);
-    SET_MODE(1);
-    SET_TUNINGS(5.026, 0.22, 3.6);
+    SET_OUTPUT_LIMITS(2000, 1250);
+    SET_TUNINGS(5.05, 0.22, 3.6);
     LEDS_GREEN();
-    delay(150);
+    delay(750);
+    SET_SPEED(1100);
+    
+    GYROCUBE_SYSTEM.change_menu(MONITOR_MENU);
+    STRING_ON_LCD(0,1,"Kp",false);
+    STRING_ON_LCD(9,1,"SP",false);
+
+    STRING_ON_LCD(0,2,"Ki",false);
+    STRING_ON_LCD(9,2,"RT",false);
+
+    STRING_ON_LCD(0,3,"Kd",false);
+    STRING_ON_LCD(9,3,"EV",false);
+    
+    delay(2000);
     while(RUN_ALGO) {
-        CHECK_HALT();
-        FETCH_NEW_DATA();
         PID_COMPUTE();
     } 
 }
+
+//LCD UPDATE Function.  Give two ints, a string or double and a boolean for clear or not.
+//Might help cut down on code size. 
+void STRING_ON_LCD(int COLL, int ROW, String TEXT, bool CLEAR) {
+    if(CLEAR) {
+        GYROCUBE_LCD.clear();
+    }
+    GYROCUBE_LCD.setCursor(COLL, ROW);
+    GYROCUBE_LCD.print(TEXT);
+}
+void DOUBLE_ON_LCD(int COLL, int ROW, double VALUE, bool CLEAR) {
+    if(CLEAR) {
+        GYROCUBE_LCD.clear();
+    }
+    GYROCUBE_LCD.setCursor(COLL, ROW);
+    GYROCUBE_LCD.print(VALUE);
+}
+
 
 //--------------------------------------------------------------------------------------------------------------------------------------------------------------
 //RUNTIME CODE:
@@ -477,8 +472,7 @@ void setup() {
     //Motor Connections and arming
     LEFT_MOTOR.attach(LEFT_MOTOR_PIN);
     RIGHT_MOTOR.attach(RIGHT_MOTOR_PIN);
-    LEFT_MOTOR.write(0);
-    RIGHT_MOTOR.write(0);
+    SET_SPEED(1000);
     delay(250);
 
     //Setup the MPU9255:
@@ -509,9 +503,7 @@ void setup() {
 
 }
 
-
 //Simple ass void loop lol
-
 void loop() {
     //Check ya buttons
     CHECK_BUTTONS();

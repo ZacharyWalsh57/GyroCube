@@ -74,7 +74,7 @@ void loop() {
   // Wait for some input
   if (Serial.available() > 0) {
     // Read the new throttle value
-    int throttle = normalizeThrottle( Serial.parseInt() );
+    int throttle = Serial.parseInt();
     // Print it out
     Serial.print("Setting throttle to: ");
     Serial.println(throttle);
@@ -84,33 +84,7 @@ void loop() {
 }
 
 void changeThrottle(int throttle) {
-  // Read the current throttle value
-  int currentThrottle = readThrottle();
-  // Are we going up or down?
-  int step = 1;
-  if( throttle < currentThrottle )
-    step = -1;
   // Slowly move to the new throttle value 
-  while( currentThrottle != throttle ) {
-    escLeft.write(currentThrottle + step);
-    escRight.write(currentThrottle + step);
-    currentThrottle = readThrottle();
-    delay(throttleChangeDelay);
+  escLeft.writeMicroseconds(throttle);
+  escRight.writeMicroseconds(throttle);
   }
-}
-
-int readThrottle() {
-  int throttle = escLeft.read();
-  Serial.print("Current throttle is: ");
-  Serial.println(throttle);
-  return throttle;
-}
-
-// Ensure the throttle value is between 0 - 180
-int normalizeThrottle(int value) {
-  if( value < 0 )
-    return 0;
-  if( value > 180 )
-    return 180;
-  return value;
-}

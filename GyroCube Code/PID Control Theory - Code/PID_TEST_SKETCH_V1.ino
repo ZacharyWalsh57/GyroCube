@@ -1,3 +1,24 @@
+double ROLL_ANGLE;
+
+//PID Constants:
+unsigned long TIME_LAST;
+double INPUT_VALUE, OUTPUT_VALUE, SETPOINT;
+double I_TERM, LAST_INPUT;
+double KP, KI, KD;
+int SAMPLE_TIME = 250; // .25 seconds
+double OUT_MIN, OUT_MAX;
+bool IN_AUTO = false;
+
+#define MANUAL 0
+#define AUTOMATIC 1 
+
+#define DIRECT 0
+#define REVERSE 1
+int CONTROLLER_DIRECTION = DIRECT;
+
+bool RUN_ALGO = true;
+
+
 void INIT_PID_ALGO() {
     LAST_INPUT = INPUT_VALUE;
     I_TERM = OUTPUT_VALUE;
@@ -57,6 +78,9 @@ void SET_SAMPLE_TIME(int NEW_TIME) {
 void PID_MOTORS(double VALUE) {
     //Motor write values. Take care of this later on. 
     //Double check all the new code/make sure it compiles.
+    //Code compiles.  This function is gonna be tough since they spin
+    //against each other. So we have to make it so that if we add to one 
+    //and remove from another.  Not hard.  Just annoying.
 }
 void PID_COMPUTE() {
     //PID computation in here:
@@ -89,6 +113,13 @@ void PID_COMPUTE() {
         PID_MOTORS(OUTPUT_VALUE);
     }
 }
+void PID_HALTED() {
+    RUN_ALGO = false;
+    LEDS_RED();
+    GYROCUBE_LCD.clear();
+    GYROCUBE_LCD.setCursor(0,0);
+    GYROCUBE_LCD.print("PID LOOP HALTED");
+}
 void CHECK_HALT() {
     UP.read(); 
     DOWN.read();
@@ -97,28 +128,23 @@ void CHECK_HALT() {
     MIDDLE.read();
     if (UP.wasReleased())
     {
-        RUN_ALGO = false;
-        LEDS_RED();
+        PID_HALTED();
     }
     if (DOWN.wasReleased())
     {
-        RUN_ALGO = false;
-        LEDS_RED();
+        PID_HALTED();
     }
     if (LEFT.wasReleased())
     {
-        RUN_ALGO = false;
-        LEDS_RED();
+        PID_HALTED();
     }
     if (RIGHT.wasReleased())
     {
-        RUN_ALGO = false;
-        LEDS_RED();
+        PID_HALTED();
     }
     if (MIDDLE.wasReleased())
     {
-        RUN_ALGO = false;
-        LEDS_RED();
+        PID_HALTED();
     }
 
 }
