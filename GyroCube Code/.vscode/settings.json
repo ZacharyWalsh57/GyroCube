@@ -26,6 +26,7 @@
         "cmath": "cpp",
         "system_error": "cpp",
         "xfunctional": "cpp",
-        "xtr1common": "cpp"
+        "xtr1common": "cpp",
+        "atomic": "cpp"
     }
 }

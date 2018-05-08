@@ -68,6 +68,7 @@ void setup() {
   // Write a minimum value (most ESCs require this correct startup)
   escLeft.write(0);
   escRight.write(0);
+
 }
 
 void loop() {
@@ -80,11 +81,22 @@ void loop() {
     Serial.println(throttle);
     // Change throttle to the new value
     changeThrottle(throttle);
+    int SPEED = escLeft.read();
+    Serial.print("ESC DEGREES:   ");
+    Serial.println(SPEED);
+    float SPEED_MICROS = SPEED_CONVERSION(SPEED);
+    Serial.print("ESC MICROS:   ");
+    Serial.println(SPEED_MICROS);
+
   }
 }
 
 void changeThrottle(int throttle) {
-  // Slowly move to the new throttle value 
+  //Move to the new throttle value 
   escLeft.writeMicroseconds(throttle);
   escRight.writeMicroseconds(throttle);
-  }
+}
+
+unsigned int SPEED_CONVERSION(float DEGREE) {
+    return 1000 + (DEGREE * 150 + 13) / 27;
+}
